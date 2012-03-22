@@ -7,33 +7,32 @@ class MoviesController < ApplicationController
   end
 
   def index
+    @all_ratings = Movie.getAllRatings
+    @selRatingsHash = {}
     orderBy = params[:orderBy]
-    if orderBy == nil
-      @movies = Movie.all
-    else
-      @movies = Movie.find(:all, :order => orderBy)
-      if orderBy == "title"
-        @hilMT = 'hilite'
-      elsif orderBy == "release_date"
-        @hilRD = 'hilite'
+    selectedRatings = params[:ratings]
+    if params[:commit] == "Refresh"
+      if selectedRatings != nil
+        selectedRatings = selectedRatings.keys
+        @all_ratings.each do |rating|
+          if selectedRatings.include?(rating)
+            @selRatingsHash[rating] = true
+          else
+            @selRatingsHash[rating] = false
+          end
+        end
       else
-        raise "orderBy not managed: #{orderBy}"
+        @all_ratings.each { |rating| @selRatingsHash[rating] = false }
+      end
+    else
+      if flash[:selRatings] != nil
+        @selRatingsHash = flash[:selRatings]
+        selectedRatings = @selRatingsHash.reject { |key, value| value == false }.keys
       end
     end
-  end
-
-  def new
-    # default: render 'new' template
-  end
-
-  def create
-    @movie = Movie.create!(params[:movie])
-    flash[:notice] = "#{@movie.title} was successfully created."
-    redirect_to movies_path
-  end
-
-  def edit
-    @movie = Movie.find params[:id]
+        
+    @movies = Movie.getOrderedMoviesByRating(selectedRatings, orderBy)
+    flash[:selRatings] = @selRatingsHash
   end
 
   def update
