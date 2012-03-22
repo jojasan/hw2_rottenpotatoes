@@ -7,7 +7,19 @@ class MoviesController < ApplicationController
   end
 
   def index
-    @movies = Movie.all
+    orderBy = params[:orderBy]
+    if orderBy == nil
+      @movies = Movie.all
+    else
+      @movies = Movie.find(:all, :order => orderBy)
+      if orderBy == "title"
+        @hilMT = 'hilite'
+      elsif orderBy == "release_date"
+        @hilRD = 'hilite'
+      else
+        raise "orderBy not managed: #{orderBy}"
+      end
+    end
   end
 
   def new
