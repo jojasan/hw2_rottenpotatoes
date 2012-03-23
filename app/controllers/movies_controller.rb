@@ -10,9 +10,17 @@ class MoviesController < ApplicationController
     @all_ratings = Movie.getAllRatings
     @selRatingsHash = {}
     orderBy = params[:orderBy]
+
+    if params[:ratings] == nil and params[:orderBy] == nil and params[:commit] == nil
+      @movies = Movie.all
+      @all_ratings.each { |rating| @selRatingsHash[rating] = false }
+      return
+    end
+    
     selectedRatings = params[:ratings]
     if params[:commit] == "Refresh"
       if selectedRatings != nil
+        # Only Selected Ratings appear as keys in the hash, their values are irrelevant (= to 1)
         selectedRatings = selectedRatings.keys
         @all_ratings.each do |rating|
           if selectedRatings.include?(rating)
@@ -22,17 +30,24 @@ class MoviesController < ApplicationController
           end
         end
       else
+        # This case is for when the user unchecks all ratings, since the params[:ratings] is nil
         @all_ratings.each { |rating| @selRatingsHash[rating] = false }
       end
     else
-      if flash[:selRatings] != nil
-        @selRatingsHash = flash[:selRatings]
-        selectedRatings = @selRatingsHash.reject { |key, value| value == false }.keys
+      # In this case, the hash has all the ratings, but the ones chosen have as value true (false otherwise)
+      # I noticed that the values of the hash came as String, and NOT as boolean
+      selectedRatings.each do |key, value|
+        if value == "false"
+          @selRatingsHash[key] = false
+        else
+          @selRatingsHash[key] = true
+        end
       end
+      selectedRatings.reject! { |key, value| value == "false" }
+      selectedRatings = selectedRatings.keys
     end
-        
+    
     @movies = Movie.getOrderedMoviesByRating(selectedRatings, orderBy)
-    flash[:selRatings] = @selRatingsHash
   end
 
   def update
