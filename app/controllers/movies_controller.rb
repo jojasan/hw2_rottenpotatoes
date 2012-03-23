@@ -10,11 +10,21 @@ class MoviesController < ApplicationController
     @all_ratings = Movie.getAllRatings
     @selRatingsHash = {}
     orderBy = params[:orderBy]
-
+    
+    # This case is for when the user goes to /movies without any parameter. I decided to show all movies (although no rating is selected)
     if params[:ratings] == nil and params[:orderBy] == nil and params[:commit] == nil
-      @movies = Movie.all
-      @all_ratings.each { |rating| @selRatingsHash[rating] = false }
-      return
+      # If there's data in session about the current search settings, then redirect with correct parameters
+      if session[:searchSettings] != nil
+        orderBy = session[:searchSettings][:orderBy]
+        selectedRatings = session[:searchSettings][:selectedRatings]
+        redirect_to movies_path({ :orderBy => orderBy, :ratings => selectedRatings })
+        return
+      # Else, just show all movies
+      else
+        @movies = Movie.all
+        @all_ratings.each { |rating| @selRatingsHash[rating] = false }
+        return
+      end
     end
     
     selectedRatings = params[:ratings]
@@ -48,6 +58,8 @@ class MoviesController < ApplicationController
     end
     
     @movies = Movie.getOrderedMoviesByRating(selectedRatings, orderBy)
+    # This line saves the current orderBy and selectedRagins settings
+    session[:searchSettings] = { :orderBy => orderBy, :selectedRatings => @selRatingsHash}
   end
 
   def update
